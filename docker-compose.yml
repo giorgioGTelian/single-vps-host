@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  knowlesglass:
+    image: 493255580566.dkr.ecr.us-east-1.amazonaws.com/knowles-glass:latest
+    pull_policy: always
+    restart: always
+    networks:
+      - caddy_network
+
+  webdevcody:
+    image: 493255580566.dkr.ecr.us-east-1.amazonaws.com/webdevcody:latest
+    pull_policy: always
+    restart: always
+    networks:
+      - caddy_network
+
+  icongeneratorai:
+    image: 493255580566.dkr.ecr.us-east-1.amazonaws.com/icongeneratorai:latest
+    pull_policy: always
+    restart: always
+    env_file:
+      - .env-icongeneratorai
+    networks:
+      - caddy_network
+
+  caddy_reverse_proxy:
+    image: caddy:latest
+    restart: always
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./certs:/etc/ssl/certs/custom
+      - ./private:/etc/ssl/private/custom
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - caddy_network
+    depends_on:
+      - knowlesglass
+      - webdevcody
+      - icongeneratorai
+
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./dozzle:/data
+    ports:
+      - 8080:8080
+    environment:
+      DOZZLE_AUTH_PROVIDER: simple
+
+networks:
+  caddy_network:
+
+volumes:
+  caddy_data:
+  caddy_config:
